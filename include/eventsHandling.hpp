@@ -2,9 +2,12 @@
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h>
 
+
+class CarromGame;
+
 class EventHandler {
 public:
-    EventHandler(sf::Sprite& striker);
+    EventHandler(CarromGame& game, sf::Sprite& striker);
     void handleEvents(sf::RenderWindow& window);
     bool isStrikerDragging() const { return strikerDragging; }
     bool isStrikerLocked() const { return strikerLocked; }
@@ -18,13 +21,15 @@ public:
 
 
 private:
+    CarromGame& game;
     sf::Sprite& strikerSprite;
     bool strikerDragging;
     bool strikerLocked;
     sf::Vector2f dragStart;
-    const float MIN_X = 238.0f;  
+    const float MIN_X = 238.0f;
     const float MAX_X = 768.0f;
-    const float STRIKER_Y = 787.0f;
+    const float STRIKER_Y_PLAYER1 = 784.0f;
+    const float STRIKER_Y_PLAYER2 = 200.0f;
 
     void MousePressed(sf::Event::MouseButtonEvent& event);
     void MouseReleased(sf::Event::MouseButtonEvent& event);

@@ -1,10 +1,11 @@
 #include "eventsHandling.hpp"
+#include "loading_assets.hpp" 
 #include <algorithm>
 #include <math.h>
 
-EventHandler::EventHandler(sf::Sprite& striker)
-    : strikerSprite(striker), strikerDragging(false), strikerLocked(false),
-      maxDragDistance(145.0f), currentDragDistance(0.0f), dragStarted(false) {
+EventHandler::EventHandler(CarromGame& game, sf::Sprite& striker)
+    : game(game), strikerSprite(striker), strikerDragging(false), strikerLocked(false),
+      maxDragDistance(145.0f), currentDragDistance(0.0f), dragStarted(false), strikerReleased(false) {
     powerIndicator.setSize(sf::Vector2f(20, 0));
     powerIndicator.setFillColor(sf::Color::Green);
     aimingLine.setPrimitiveType(sf::LineStrip);
@@ -56,8 +57,10 @@ void EventHandler::handleEvents(sf::RenderWindow& window) {
     }
 }
 
+
 void EventHandler::MousePressed(sf::Event::MouseButtonEvent& event) {
     sf::Vector2f clickPosition(event.x, event.y);
+    sf::Vector2f strikerPosition = game.getCurrentStrikerPosition();
     
     if (event.button == sf::Mouse::Left) {
         if (strikerLocked && strikerSprite.getGlobalBounds().contains(clickPosition)) {
@@ -82,6 +85,9 @@ void EventHandler::MousePressed(sf::Event::MouseButtonEvent& event) {
         }
     }
 }
+
+
+
 
 void EventHandler::MouseReleased(sf::Event::MouseButtonEvent& event) {
     if (event.button == sf::Mouse::Left) {
@@ -120,12 +126,14 @@ void EventHandler::MouseMoved(sf::Event::MouseMoveEvent& event) {
         sf::Vector2f currentPos(event.x, event.y);
         sf::Vector2f diff = currentPos - dragStart;
         
-        float newX = std::clamp(strikerSprite.getPosition().x + diff.x, MIN_X, MAX_X);
-        strikerSprite.setPosition(newX, STRIKER_Y);
+        float newX = std::clamp(strikerSprite.getPosition().x + diff.x, 
+                                MIN_X, MAX_X);
+        float newY = (game.getCurrentPlayer() == 1) ? STRIKER_Y_PLAYER1 : STRIKER_Y_PLAYER2;
+        strikerSprite.setPosition(newX, newY);
         
         dragStart = sf::Vector2f(event.x, event.y);
     }
-}  
+}
 
 
 void EventHandler::updatePowerIndicator() {

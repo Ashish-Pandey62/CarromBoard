@@ -5,6 +5,9 @@
 #include <box2d/box2d.h>
 #include <queue>
 
+class EventHandler;
+
+
 class CarromGame {
 private:
 
@@ -73,7 +76,7 @@ private:
         // New members for pocket system
     std::queue<b2Body*> pocketedCoins;
     bool strikerPocketed;
-    // sf::Vector2f initialStrikerPosition;      YO PAXI UNCOMMENT GARNA PARNA SAKNE NI HUNA SAKXA HAII....
+    sf::Vector2f initialStrikerPosition;      //YO PAXI UNCOMMENT GARNA PARNA SAKNE NI HUNA SAKXA HAII....
 
 public:
     CarromGame();
@@ -81,7 +84,8 @@ public:
     void switchTurn();
     void resetStrikerPosition();
     void handleTurn();
-    
+    sf::Vector2f getCurrentStrikerPosition() const;
+    int getCurrentPlayer() const { return currentPlayer; } 
     void run();
     void setFrictionCoefficient(float friction) { frictionCoefficient = friction; }
     void setRestitutionCoefficient(float restitution) { restitutionCoefficient = restitution; }

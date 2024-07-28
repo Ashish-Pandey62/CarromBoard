@@ -6,7 +6,7 @@
 
 CarromGame::CarromGame() 
     : window(sf::VideoMode(1000, 1000), "Carrom Game"),
-      eventHandler(strikerSprite),
+      eventHandler(*this,strikerSprite),
       frictionCoefficient(0.9f),
       restitutionCoefficient(0.2f),
       strikerPocketed(false),
@@ -21,6 +21,7 @@ CarromGame::CarromGame()
     setupSprites();
     setupPhysics();
     setupPockets();
+    resetStrikerPosition();
 }
 
 CarromGame::~CarromGame() {
@@ -154,22 +155,21 @@ void CarromGame::switchTurn() {
 }
 
 void CarromGame::resetStrikerPosition() {
-    if (currentPlayer == 1) {
-        strikerBody->SetTransform(b2Vec2(player1StrikerPosition.x / 30.0f, player1StrikerPosition.y / 30.0f), 0);
-    } else {
-        strikerBody->SetTransform(b2Vec2(player2StrikerPosition.x / 30.0f, player2StrikerPosition.y / 30.0f), 0);
-    }
+    sf::Vector2f newPosition = getCurrentStrikerPosition();
+    strikerBody->SetTransform(b2Vec2(newPosition.x / 30.0f, newPosition.y / 30.0f), 0);
     strikerBody->SetLinearVelocity(b2Vec2(0, 0));
-    strikerSprite.setPosition(currentPlayer == 1 ? player1StrikerPosition : player2StrikerPosition);
+    strikerSprite.setPosition(newPosition);
 }
 
+sf::Vector2f CarromGame::getCurrentStrikerPosition() const {
+    return (currentPlayer == 1) ? player1StrikerPosition : player2StrikerPosition;
+}
 
 void CarromGame::handleTurn() {
     if (strikerShot && areAllBodiesAtRest()) {
         if (!coinPocketed || strikerPocketed) {
             switchTurn();
         } else {
-            // Reset striker position for the same player
             resetStrikerPosition();
         }
         strikerShot = false;
@@ -213,19 +213,19 @@ void CarromGame::setupPhysics() {
     fixtureDef.restitution = restitutionCoefficient;
 
     // Top edge
-    boardEdge.SetTwoSided(b2Vec2(-450.0f / 30.0f, -450.0f / 30.0f), b2Vec2(450.0f / 30.0f, -450.0f / 30.0f));
+    boardEdge.SetTwoSided(b2Vec2(-375.0f / 30.0f, -375.0f / 30.0f), b2Vec2(375.0f / 30.0f, -375.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
     // Bottom edge
-    boardEdge.SetTwoSided(b2Vec2(-450.0f / 30.0f, 450.0f / 30.0f), b2Vec2(450.0f / 30.0f, 450.0f / 30.0f));
+    boardEdge.SetTwoSided(b2Vec2(-380.0f / 30.0f, 380.0f / 30.0f), b2Vec2(380.0f / 30.0f, 380.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
     // Left edge
-    boardEdge.SetTwoSided(b2Vec2(-450.0f / 30.0f, -450.0f / 30.0f), b2Vec2(-450.0f / 30.0f, 450.0f / 30.0f));
+    boardEdge.SetTwoSided(b2Vec2(-380.0f / 30.0f, -380.0f / 30.0f), b2Vec2(-380.0f / 30.0f, 380.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
     // Right edge
-    boardEdge.SetTwoSided(b2Vec2(450.0f / 30.0f, -450.0f / 30.0f), b2Vec2(450.0f / 30.0f, 450.0f / 30.0f));
+    boardEdge.SetTwoSided(b2Vec2(380.0f / 30.0f, -380.0f / 30.0f), b2Vec2(380.0f / 30.0f, 380.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
     // Create striker
@@ -634,16 +634,12 @@ void CarromGame::run() {
         while (accumulator >= fixedTimeStep) {
             updatePhysics();
             checkPocketCollisions();
-            handleTurn();  
+            handleTurn();
             accumulator -= fixedTimeStep;
         }
 
         float alpha = accumulator / fixedTimeStep;
         interpolatePositions(alpha);
-
-        if (areAllBodiesAtRest()  ) {
-            switchTurn();
-        }
 
         window.clear(sf::Color::White);
         
