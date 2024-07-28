@@ -1,0 +1,1 @@
+-IC:/CarromBoard/CarromBoard/include -IC:/CarromBoard/CarromBoard/libs/box2d/include -IC:/CarromBoard/CarromBoard/libs/box2d/src/../include -isystem "C:/SFML-2.6.0/include"
