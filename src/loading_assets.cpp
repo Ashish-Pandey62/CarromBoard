@@ -10,7 +10,11 @@ CarromGame::CarromGame()
       frictionCoefficient(0.9f),
       restitutionCoefficient(0.2f),
       strikerPocketed(false),
-      initialStrikerPosition(500, 784)
+      player1StrikerPosition(500, 784),
+      player2StrikerPosition(500, 200),
+      currentPlayer(1)  ,
+      strikerShot(false),
+      coinPocketed(false)
 {
     std::srand(std::time(nullptr));
     loadTextures();
@@ -40,7 +44,8 @@ void CarromGame::setupSprites() {
     strikerSprite.setTexture(strikerTexture);
     queenSprite.setTexture(queenTexture);
 
-    boardSprite.setPosition(0, 0); // this board image is acting as a background haii
+    boardSprite.setScale(800.0f / boardTexture.getSize().x, 800.0f / boardTexture.getSize().y);
+    boardSprite.setPosition(100, 100); // this board image is acting as a background haii
 
     //  we are centering the origin of each sprite to their center (initially it is set to top left corner)
     strikerSprite.setOrigin(strikerTexture.getSize().x / 2.0f, strikerTexture.getSize().y / 2.0f);
@@ -116,6 +121,7 @@ void CarromGame::checkAllBodiesAtRest() {
     }
 }
 
+
 bool CarromGame::areAllBodiesAtRest() const {
     const float restThreshold = 0.1f;  // Adjust this value as needed
 
@@ -132,19 +138,51 @@ bool CarromGame::areAllBodiesAtRest() const {
     return true;
 }
 
+
+
+// void CarromGame::resetStrikerPosition() {
+//     strikerBody->SetTransform(b2Vec2(initialStrikerPosition.x / 30.0f, initialStrikerPosition.y / 30.0f), 0);
+//     strikerBody->SetLinearVelocity(b2Vec2(0, 0));
+//     strikerSprite.setPosition(initialStrikerPosition);
+// }
+
+void CarromGame::switchTurn() {
+    currentPlayer = (currentPlayer == 1) ? 2 : 1;
+    resetStrikerPosition();
+    strikerShot = false;
+    coinPocketed = false;
+}
+
 void CarromGame::resetStrikerPosition() {
-    strikerBody->SetTransform(b2Vec2(initialStrikerPosition.x / 30.0f, initialStrikerPosition.y / 30.0f), 0);
+    if (currentPlayer == 1) {
+        strikerBody->SetTransform(b2Vec2(player1StrikerPosition.x / 30.0f, player1StrikerPosition.y / 30.0f), 0);
+    } else {
+        strikerBody->SetTransform(b2Vec2(player2StrikerPosition.x / 30.0f, player2StrikerPosition.y / 30.0f), 0);
+    }
     strikerBody->SetLinearVelocity(b2Vec2(0, 0));
-    strikerSprite.setPosition(initialStrikerPosition);
+    strikerSprite.setPosition(currentPlayer == 1 ? player1StrikerPosition : player2StrikerPosition);
 }
 
 
+void CarromGame::handleTurn() {
+    if (strikerShot && areAllBodiesAtRest()) {
+        if (!coinPocketed || strikerPocketed) {
+            switchTurn();
+        } else {
+            // Reset striker position for the same player
+            resetStrikerPosition();
+        }
+        strikerShot = false;
+        coinPocketed = false;
+        strikerPocketed = false;
+    }
+}
 
 
 
 void CarromGame::setupPockets() {
     std::vector<sf::Vector2f> pocketPositions = {
-        {50, 50}, {950, 50}, {50, 950}, {950, 950}
+        {153, 160}, {845, 158}, {153, 850}, {850, 850}
     };
 
     for (const auto& pos : pocketPositions) {
@@ -304,6 +342,7 @@ void CarromGame::checkPocketCollisions() {
             pocketedCoins.push(coinBody);
             world->DestroyBody(coinBody);
             it = coinBodies.erase(it);
+            coinPocketed = true; 
         } else {
             ++it;
         }
@@ -341,6 +380,8 @@ void CarromGame::checkPocketCollisions() {
         handlePocketedStriker();
     }
 }
+
+
 
 void CarromGame::handlePocketedStriker() {
     strikerPocketed = false;
@@ -587,17 +628,22 @@ void CarromGame::run() {
             float power = eventHandler.getStrikerPower();
             applyStrikerForce(angle, power);
             eventHandler.resetStrikerRelease();
+            strikerShot = true;
         }
 
         while (accumulator >= fixedTimeStep) {
             updatePhysics();
-            checkAllBodiesAtRest();  // New: Check if all bodies are at rest
-            checkPocketCollisions(); // New: Check for pocket collisions
+            checkPocketCollisions();
+            handleTurn();  
             accumulator -= fixedTimeStep;
         }
 
         float alpha = accumulator / fixedTimeStep;
         interpolatePositions(alpha);
+
+        if (areAllBodiesAtRest()  ) {
+            switchTurn();
+        }
 
         window.clear(sf::Color::White);
         

@@ -7,6 +7,15 @@
 
 class CarromGame {
 private:
+
+    int currentPlayer;
+    sf::Vector2f player1StrikerPosition;
+    sf::Vector2f player2StrikerPosition; 
+    bool strikerShot;
+    bool coinPocketed;
+
+
+
     sf::RenderWindow window;
     sf::Sprite bgSprite;
     sf::Sprite boardSprite;
@@ -54,7 +63,7 @@ private:
     void interpolatePositions(float alpha);
     void checkPocketCollisions();
     void checkAllBodiesAtRest();
-    void resetStrikerPosition();
+    // void resetStrikerPosition();
     bool areAllBodiesAtRest() const;
     void handlePocketedStriker();
     void placeLastPocketedCoinInCenter();
@@ -64,11 +73,15 @@ private:
         // New members for pocket system
     std::queue<b2Body*> pocketedCoins;
     bool strikerPocketed;
-    sf::Vector2f initialStrikerPosition;
+    // sf::Vector2f initialStrikerPosition;      YO PAXI UNCOMMENT GARNA PARNA SAKNE NI HUNA SAKXA HAII....
 
 public:
     CarromGame();
     ~CarromGame();
+    void switchTurn();
+    void resetStrikerPosition();
+    void handleTurn();
+    
     void run();
     void setFrictionCoefficient(float friction) { frictionCoefficient = friction; }
     void setRestitutionCoefficient(float restitution) { restitutionCoefficient = restitution; }
