@@ -28,18 +28,53 @@ CarromGame::~CarromGame() {
     delete world;
 }
 
+const sf::Vector2f CarromGame::PLAYER1_POSITION(120.0f, -30.0f);
+const sf::Vector2f CarromGame::PLAYER2_POSITION(755.0f, -30.0f);
+const sf::Vector2f CarromGame::QUIT_POSITION(450.0f, 870.0f);
+
 void CarromGame::loadTextures() {
-    if (!bgTexture.loadFromFile("assets/bg.png") ||
-        !boardTexture.loadFromFile("assets/board.png") ||
-        !strikerTexture.loadFromFile("assets/striker.png") ||
-        !queenTexture.loadFromFile("assets/queen.png") ||
-        !blackCoinTexture.loadFromFile("assets/black.png") ||
-        !whiteCoinTexture.loadFromFile("assets/white.png")) {
-        throw std::runtime_error("Failed to load textures");
-    }
+if (!boardTexture.loadFromFile("assets/board.png") ||
+    !strikerTexture.loadFromFile("assets/striker.png") ||
+    !queenTexture.loadFromFile("assets/queen.png") ||
+    !blackCoinTexture.loadFromFile("assets/black.png") ||
+    !whiteCoinTexture.loadFromFile("assets/white.png") ||
+    !player1Texture.loadFromFile("assets/player1.png") ||
+    !player2Texture.loadFromFile("assets/player2.png") ||
+    !quitTexture.loadFromFile("assets/quit.png")) {
+    throw std::runtime_error("Failed to load textures");
+}
 }
 
 void CarromGame::setupSprites() {
+
+    // Set up player1 sprite
+    player1Sprite.setTexture(player1Texture);
+    player1Sprite.setOrigin(PLAYER_SPRITE_WIDTH / 2, PLAYER_SPRITE_HEIGHT / 2);
+    player1Sprite.setPosition(PLAYER1_POSITION);
+    player1Sprite.setScale(
+        PLAYER_SPRITE_WIDTH / player1Texture.getSize().x,
+        PLAYER_SPRITE_HEIGHT / player1Texture.getSize().y
+    );
+
+    // Set up player2 sprite
+    player2Sprite.setTexture(player2Texture);
+    player2Sprite.setOrigin(PLAYER_SPRITE_WIDTH / 2, PLAYER_SPRITE_HEIGHT / 2);
+    player2Sprite.setPosition(PLAYER2_POSITION);
+    player2Sprite.setScale(
+        PLAYER_SPRITE_WIDTH / player2Texture.getSize().x,
+        PLAYER_SPRITE_HEIGHT / player2Texture.getSize().y
+    );
+
+    // Set up quit sprite
+    quitSprite.setTexture(quitTexture);
+    quitSprite.setOrigin(PLAYER_SPRITE_WIDTH / 2, PLAYER_SPRITE_HEIGHT / 2);
+    quitSprite.setPosition(QUIT_POSITION);
+    quitSprite.setScale(
+        PLAYER_SPRITE_WIDTH / quitTexture.getSize().x,
+        PLAYER_SPRITE_HEIGHT / quitTexture.getSize().y
+    );
+
+    // board and other things setting upp
     boardSprite.setTexture(boardTexture);
     strikerSprite.setTexture(strikerTexture);
     queenSprite.setTexture(queenTexture);
@@ -648,6 +683,9 @@ void CarromGame::run() {
         }
         window.draw(strikerSprite);
         window.draw(queenSprite);
+        window.draw(player1Sprite);
+        window.draw(player2Sprite);
+        window.draw(quitSprite);
         
         for (const auto& coin : blackCoins) {
             window.draw(coin);

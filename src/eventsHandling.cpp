@@ -153,4 +153,3 @@ void EventHandler::updatePowerIndicator() {
     );
     powerIndicator.setFillColor(color);
 }
-

@@ -10,14 +10,11 @@ class EventHandler;
 
 class CarromGame {
 private:
-
     int currentPlayer;
     sf::Vector2f player1StrikerPosition;
     sf::Vector2f player2StrikerPosition; 
     bool strikerShot;
     bool coinPocketed;
-
-
 
     sf::RenderWindow window;
     sf::Sprite bgSprite;
@@ -28,6 +25,18 @@ private:
     std::vector<sf::Sprite> whiteCoins;
     std::vector<sf::CircleShape> pockets;
 
+    sf::Sprite player1Sprite;
+    sf::Sprite player2Sprite;
+    sf::Sprite quitSprite;
+    sf::Texture player1Texture;
+    sf::Texture player2Texture;
+    sf::Texture quitTexture;
+
+    static const constexpr float PLAYER_SPRITE_WIDTH = 200.0f;
+    static const constexpr float PLAYER_SPRITE_HEIGHT = 200.0f;
+    static const sf::Vector2f PLAYER1_POSITION;
+    static const sf::Vector2f PLAYER2_POSITION;
+    static const sf::Vector2f QUIT_POSITION;
 
     const float COIN_DIAMETER = 35.0f;
     const float STRIKER_DIAMETER = 46.0f;
