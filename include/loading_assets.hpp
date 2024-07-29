@@ -28,17 +28,17 @@ private:
     std::vector<sf::Sprite> whiteCoins;
     std::vector<sf::CircleShape> pockets;
 
+
     const float COIN_DIAMETER = 35.0f;
     const float STRIKER_DIAMETER = 46.0f;
     const float QUEEN_DIAMETER = 35.0f;
     const float POCKET_DIAMETER = 50.0f;
-
-    sf::Texture bgTexture;
     sf::Texture boardTexture;
     sf::Texture strikerTexture;
     sf::Texture queenTexture;
     sf::Texture blackCoinTexture;
     sf::Texture whiteCoinTexture;
+
 
     void loadTextures();
     void setupSprites();

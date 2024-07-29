@@ -7,7 +7,7 @@
 CarromGame::CarromGame() 
     : window(sf::VideoMode(1000, 1000), "Carrom Game"),
       eventHandler(*this,strikerSprite),
-      frictionCoefficient(0.9f),
+      frictionCoefficient(2.5f),
       restitutionCoefficient(0.2f),
       strikerPocketed(false),
       player1StrikerPosition(500, 784),
@@ -40,7 +40,6 @@ void CarromGame::loadTextures() {
 }
 
 void CarromGame::setupSprites() {
-
     boardSprite.setTexture(boardTexture);
     strikerSprite.setTexture(strikerTexture);
     queenSprite.setTexture(queenTexture);
