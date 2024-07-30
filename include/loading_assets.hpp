@@ -38,6 +38,14 @@ private:
     static const sf::Vector2f PLAYER2_POSITION;
     static const sf::Vector2f QUIT_POSITION;
 
+    int player1Score;
+    int player2Score;
+    std::vector<b2Body*> player1PocketedCoins;
+    std::vector<b2Body*> player2PocketedCoins;
+    sf::Font scoreFont;
+    sf::Text player1ScoreText;
+    sf::Text player2ScoreText;
+
     const float COIN_DIAMETER = 35.0f;
     const float STRIKER_DIAMETER = 46.0f;
     const float QUEEN_DIAMETER = 35.0f;
@@ -60,6 +68,10 @@ private:
     b2Body* queenBody;
     std::vector<b2Body*> coinBodies;
 
+    int getCoinValue(b2Body* coinBody);
+    void updateScoreDisplay();
+
+
     void setupPhysics();
     void updatePhysics();
     void applyStrikerForce(float angle, float power);
@@ -73,12 +85,12 @@ private:
     std::vector<b2Vec2> previousPositions;
 
     void interpolatePositions(float alpha);
-    void checkPocketCollisions();
+
     void checkAllBodiesAtRest();
     // void resetStrikerPosition();
     bool areAllBodiesAtRest() const;
     void handlePocketedStriker();
-    void placeLastPocketedCoinInCenter();
+    void placeLastPocketedCoinInCenter(std::vector<b2Body*>& pocketedCoins);
     bool isSpaceAvailableInCenter() const;
     void moveCentralCoinToSide();
 
@@ -91,6 +103,7 @@ public:
     CarromGame();
     ~CarromGame();
     void switchTurn();
+    void checkPocketCollisions();
     void resetStrikerPosition();
     void handleTurn();
     sf::Vector2f getCurrentStrikerPosition() const;

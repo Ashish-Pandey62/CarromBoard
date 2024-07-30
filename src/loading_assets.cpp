@@ -6,15 +6,17 @@
 
 CarromGame::CarromGame() 
     : window(sf::VideoMode(1000, 1000), "Carrom Game"),
-      eventHandler(*this,strikerSprite),
+      eventHandler(*this, strikerSprite),
       frictionCoefficient(2.5f),
       restitutionCoefficient(0.2f),
       strikerPocketed(false),
       player1StrikerPosition(500, 784),
       player2StrikerPosition(500, 200),
-      currentPlayer(1)  ,
+      currentPlayer(1),
       strikerShot(false),
-      coinPocketed(false)
+      coinPocketed(false),
+      player1Score(0),
+      player2Score(0)
 {
     std::srand(std::time(nullptr));
     loadTextures();
@@ -22,6 +24,23 @@ CarromGame::CarromGame()
     setupPhysics();
     setupPockets();
     resetStrikerPosition();
+
+
+    if (!scoreFont.loadFromFile("assets/EnterCommand.ttf")) {
+        throw std::runtime_error("Failed to load font");
+    }
+
+    player1ScoreText.setFont(scoreFont);
+    player1ScoreText.setCharacterSize(60);
+    player1ScoreText.setFillColor(sf::Color::Green);
+    player1ScoreText.setPosition(165, 33);
+
+    player2ScoreText.setFont(scoreFont);
+    player2ScoreText.setCharacterSize(60);
+    player2ScoreText.setFillColor(sf::Color::Green);
+    player2ScoreText.setPosition(800, 33);
+
+    updateScoreDisplay();
 }
 
 CarromGame::~CarromGame() {
@@ -148,7 +167,10 @@ void CarromGame::setupSprites() {
         }
     }
 }
-
+void CarromGame::updateScoreDisplay() {
+    player1ScoreText.setString(std::to_string(player1Score));
+    player2ScoreText.setString(std::to_string(player2Score));
+}
 
 void CarromGame::checkAllBodiesAtRest() {
     if (areAllBodiesAtRest()) {
@@ -354,7 +376,6 @@ void CarromGame::setupPhysics() {
 }
 
 
-
 void CarromGame::checkPocketCollisions() {
     for (auto it = coinBodies.begin(); it != coinBodies.end();) {
         b2Body* coinBody = *it;
@@ -373,10 +394,19 @@ void CarromGame::checkPocketCollisions() {
         }
         
         if (pocketed) {
-            pocketedCoins.push(coinBody);
+            int points = getCoinValue(coinBody);
+            if (currentPlayer == 1) {
+                player1Score += points;
+                player1PocketedCoins.push_back(coinBody);
+                 coinPocketed = true; 
+            } else {
+                player2Score += points;
+                player2PocketedCoins.push_back(coinBody);
+                coinPocketed = true; 
+            }
+            
             world->DestroyBody(coinBody);
             it = coinBodies.erase(it);
-            coinPocketed = true; 
         } else {
             ++it;
         }
@@ -390,56 +420,54 @@ void CarromGame::checkPocketCollisions() {
         
         float distance = b2Distance(strikerPosition, pocketPosition);
         if (distance < (POCKET_DIAMETER / 2 + STRIKER_DIAMETER / 2) / 30.0f) {
-            strikerPocketed = true;
+            handlePocketedStriker();
             break;
         }
     }
 
-    // Remove sprites for removed coins
-    auto removeSprite = [this](std::vector<sf::Sprite>& coins) {
-        coins.erase(std::remove_if(coins.begin(), coins.end(),
-            [this](const sf::Sprite& coin) {
-                return std::find_if(coinBodies.begin(), coinBodies.end(),
-                    [&coin](const b2Body* body) {
-                        return body->GetPosition().x * 30.0f == coin.getPosition().x &&
-                               body->GetPosition().y * 30.0f == coin.getPosition().y;
-                    }) == coinBodies.end();
-            }), coins.end());
-    };
-
-    removeSprite(blackCoins);
-    removeSprite(whiteCoins);
-
-    if (strikerPocketed) {
-        handlePocketedStriker();
-    }
+    updateScoreDisplay();
 }
-
-
 
 void CarromGame::handlePocketedStriker() {
-    strikerPocketed = false;
-    strikerBody->SetTransform(b2Vec2(initialStrikerPosition.x / 30.0f, initialStrikerPosition.y / 30.0f), 0);
-    strikerBody->SetLinearVelocity(b2Vec2(0, 0));
-    strikerSprite.setPosition(initialStrikerPosition);
-
-    if (!pocketedCoins.empty()) {
-        placeLastPocketedCoinInCenter();
+    if (currentPlayer == 1) {
+        player1Score -= 5;
+        if (!player1PocketedCoins.empty()) {
+            placeLastPocketedCoinInCenter(player1PocketedCoins);
+            player1Score -= getCoinValue(player1PocketedCoins.back());
+            player1PocketedCoins.pop_back();
+        }
+    } else {
+        player2Score -= 5;
+        if (!player2PocketedCoins.empty()) {
+            placeLastPocketedCoinInCenter(player2PocketedCoins);
+            player2Score -= getCoinValue(player2PocketedCoins.back());
+            player2PocketedCoins.pop_back();
+        }
     }
+    resetStrikerPosition();
+    updateScoreDisplay();
 }
 
 
-void CarromGame::placeLastPocketedCoinInCenter() {
-    b2Body* lastPocketedCoin = pocketedCoins.back();
-    pocketedCoins.pop();
 
-    if (isSpaceAvailableInCenter()) {
-        lastPocketedCoin->SetTransform(b2Vec2(500 / 30.0f, 500 / 30.0f), 0);
-    } else {
-        moveCentralCoinToSide();
-        lastPocketedCoin->SetTransform(b2Vec2(500 / 30.0f, 500 / 30.0f), 0);
+int CarromGame::getCoinValue(b2Body* coinBody) {
+    if (coinBody == queenBody) return 25;
+    for (const auto& coin : blackCoins) {
+        if (coin.getPosition() == sf::Vector2f(coinBody->GetPosition().x * 30.0f, coinBody->GetPosition().y * 30.0f)) {
+            return 5;
+        }
     }
+    return 10; 
+}
 
+
+void CarromGame::placeLastPocketedCoinInCenter(std::vector<b2Body*>& pocketedCoins) {
+    if (pocketedCoins.empty()) return;
+
+    b2Body* lastPocketedCoin = pocketedCoins.back();
+    pocketedCoins.pop_back();
+
+    lastPocketedCoin->SetTransform(b2Vec2(500 / 30.0f, 500 / 30.0f), 0);
     lastPocketedCoin->SetLinearVelocity(b2Vec2(0, 0));
     coinBodies.push_back(lastPocketedCoin);
 
@@ -463,6 +491,7 @@ void CarromGame::placeLastPocketedCoinInCenter() {
         coinSprite->setPosition(500, 500);
     }
 }
+
 
 bool CarromGame::isSpaceAvailableInCenter() const {
     const float CENTER_X = 500.0f;
@@ -698,7 +727,8 @@ void CarromGame::run() {
             window.draw(eventHandler.getPowerIndicator());
             window.draw(eventHandler.getAimingLine());
         }
-        
+        window.draw(player1ScoreText);
+        window.draw(player2ScoreText);
         window.display();
     }
 }
