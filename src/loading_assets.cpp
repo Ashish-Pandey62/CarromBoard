@@ -214,6 +214,21 @@ void CarromGame::updateScoreDisplay() {
     player2ScoreText.setString(std::to_string(player2Score));
 }
 
+void CarromGame::updateStrikerPosition(const b2Vec2& newPosition) {
+    if (strikerBody) {
+        strikerBody->SetTransform(newPosition, strikerBody->GetAngle());
+        strikerBody->SetLinearVelocity(b2Vec2(0, 0));
+    }
+}
+
+void CarromGame::updateStrikerPositionFromEventHandler() {
+    sf::Vector2f newPosition = eventHandler.getNewStrikerPosition();
+    if (newPosition.x != -1 && newPosition.y != -1) {
+        updateStrikerPosition(b2Vec2(newPosition.x / 30.0f, newPosition.y / 30.0f));
+        eventHandler.resetNewStrikerPosition();
+    }
+}
+
 void CarromGame::checkAllBodiesAtRest() {
     if (areAllBodiesAtRest()) {
         resetStrikerPosition();
@@ -238,13 +253,6 @@ bool CarromGame::areAllBodiesAtRest() const {
 }
 
 
-
-// void CarromGame::resetStrikerPosition() {
-//     strikerBody->SetTransform(b2Vec2(initialStrikerPosition.x / 30.0f, initialStrikerPosition.y / 30.0f), 0);
-//     strikerBody->SetLinearVelocity(b2Vec2(0, 0));
-//     strikerSprite.setPosition(initialStrikerPosition);
-// }
-
 void CarromGame::switchTurn() {
     currentPlayer = (currentPlayer == 1) ? 2 : 1;
     resetStrikerPosition();
@@ -254,8 +262,10 @@ void CarromGame::switchTurn() {
 
 void CarromGame::resetStrikerPosition() {
     sf::Vector2f newPosition = getCurrentStrikerPosition();
-    strikerBody->SetTransform(b2Vec2(newPosition.x / 30.0f, newPosition.y / 30.0f), 0);
-    strikerBody->SetLinearVelocity(b2Vec2(0, 0));
+    if (strikerBody) {
+        strikerBody->SetTransform(b2Vec2(newPosition.x / 30.0f, newPosition.y / 30.0f), 0);
+        strikerBody->SetLinearVelocity(b2Vec2(0, 0));
+    }
     strikerSprite.setPosition(newPosition);
 }
 
@@ -264,11 +274,22 @@ sf::Vector2f CarromGame::getCurrentStrikerPosition() const {
 }
 
 
-
 void CarromGame::handleTurn() {
     if (strikerShot && areAllBodiesAtRest()) {
-        if (queenPocketed && !coinPocketedAfterQueen) {
-            returnQueen();
+        if (queenPocketed) {
+            if (coinPocketedAfterQueen) {
+                // Player successfully pocketed a coin after the queen
+                if (queenPocketedBy == 1) {
+                    player1Score += 25;
+                } else {
+                    player2Score += 25;
+                }
+                queenPocketed = false;
+                queenPocketedBy = 0;
+            } else {
+                // Player failed to pocket a coin after the queen
+                returnQueen();
+            }
         }
         
         if (!coinPocketed || strikerPocketed) {
@@ -280,17 +301,7 @@ void CarromGame::handleTurn() {
         strikerShot = false;
         coinPocketed = false;
         strikerPocketed = false;
-        
-        if (queenPocketed && coinPocketedAfterQueen) {
-            if (queenPocketedBy == 1) {
-                player1Score += 25;
-            } else {
-                player2Score += 25;
-            }
-            queenPocketed = false;
-            queenPocketedBy = 0;
-            coinPocketedAfterQueen = false;
-        }
+        coinPocketedAfterQueen = false;
     }
 }
 
@@ -319,7 +330,6 @@ void CarromGame::returnQueen() {
     queenPocketedBy = 0;
 }
 
-
 void CarromGame::setupPockets() {
     std::vector<sf::Vector2f> pocketPositions = {
         {154, 160}, {841, 158}, {153, 846}, {843, 845}
@@ -333,16 +343,11 @@ void CarromGame::setupPockets() {
     }
 }
 
-
-
-
-
-
 void CarromGame::setupPhysics() {
     b2Vec2 gravity(0.0f, 0.0f);
     world = new b2World(gravity);
 
-    // Create board boundaries
+    // Creating board boundaries
     b2BodyDef boardDef;
     boardDef.position.Set(500.0f / 30.0f, 500.0f / 30.0f);
     b2Body* boardBody = world->CreateBody(&boardDef);
@@ -352,23 +357,23 @@ void CarromGame::setupPhysics() {
     fixtureDef.shape = &boardEdge;
     fixtureDef.restitution = restitutionCoefficient;
 
-    // Top edge
+    // Top edge defn
     boardEdge.SetTwoSided(b2Vec2(-375.0f / 30.0f, -375.0f / 30.0f), b2Vec2(375.0f / 30.0f, -375.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
-    // Bottom edge
+    // Bottom edge defn
     boardEdge.SetTwoSided(b2Vec2(-380.0f / 30.0f, 380.0f / 30.0f), b2Vec2(380.0f / 30.0f, 380.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
-    // Left edge
+    // Left edge defn
     boardEdge.SetTwoSided(b2Vec2(-380.0f / 30.0f, -380.0f / 30.0f), b2Vec2(-380.0f / 30.0f, 380.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
-    // Right edge
+    // Right edge defn
     boardEdge.SetTwoSided(b2Vec2(380.0f / 30.0f, -380.0f / 30.0f), b2Vec2(380.0f / 30.0f, 380.0f / 30.0f));
     boardBody->CreateFixture(&fixtureDef);
 
-    // Create striker
+    // Creating striker
     b2BodyDef strikerDef;
     strikerDef.type = b2_dynamicBody;
     strikerDef.position.Set(strikerSprite.getPosition().x / 30.0f, strikerSprite.getPosition().y / 30.0f);
@@ -385,7 +390,7 @@ void CarromGame::setupPhysics() {
 
     strikerBody->CreateFixture(&strikerFixtureDef);
 
-    // Create coins
+    // Creating coins
     b2CircleShape coinShape;
     coinShape.m_radius = COIN_DIAMETER / 2.0f / 30.0f;
 
@@ -413,7 +418,7 @@ void CarromGame::setupPhysics() {
         coinBodies.push_back(coinBody);
     }
 
-    // Create queen
+    // Creating queen
     b2BodyDef queenDef;
     queenDef.type = b2_dynamicBody;
     queenDef.position.Set(queenSprite.getPosition().x / 30.0f, queenSprite.getPosition().y / 30.0f);
@@ -429,10 +434,9 @@ void CarromGame::setupPhysics() {
     queenFixtureDef.restitution = restitutionCoefficient;
 
     queenBody->CreateFixture(&queenFixtureDef);
-
-    // For striker, coins, and queen
-    strikerBody->SetLinearDamping(0.3f);
     queenBody->SetLinearDamping(0.3f);
+
+
     for (auto* coinBody : coinBodies) {
         coinBody->SetLinearDamping(0.3f);
     }
@@ -441,7 +445,7 @@ void CarromGame::setupPhysics() {
     for (size_t i = 0; i < previousPositions.size(); ++i) {
         previousPositions[i] = b2Vec2(0, 0);
     }
-    // Adding pocket sensors
+    // Adding pocket 
 
 
     b2CircleShape pocketShape;
@@ -464,16 +468,32 @@ void CarromGame::handleQueenPocketed() {
     queenPocketedBy = currentPlayer;
     coinPocketedAfterQueen = false;
     
-    // Remove queen from the board
-    world->DestroyBody(queenBody);
-    queenBody = nullptr;
-    queenSprite.setPosition(-100, -100);  // Move off-screen
+    if (queenBody) {
+        world->DestroyBody(queenBody);
+        queenBody = nullptr;
+    }
+    queenSprite.setPosition(-100, -100);  // screen bata bahira
 }
 
 
-
-
 void CarromGame::checkPocketCollisions() {
+
+    if (queenBody) {
+        b2Vec2 queenPosition = queenBody->GetPosition();
+        for (const auto& pocket : pockets) {
+            sf::Vector2f pocketCenter = pocket.getPosition() + sf::Vector2f(POCKET_DIAMETER / 2, POCKET_DIAMETER / 2);
+            b2Vec2 pocketPosition(pocketCenter.x / 30.0f, pocketCenter.y / 30.0f);
+            
+            float distance = b2Distance(queenPosition, pocketPosition);
+            if (distance < (POCKET_DIAMETER / 2 + QUEEN_DIAMETER / 2) / 30.0f) {
+                handleQueenPocketed();
+                break;
+            }
+        }
+    }
+
+
+
     for (auto it = coinBodies.begin(); it != coinBodies.end();) {
         b2Body* coinBody = *it;
         b2Vec2 coinPosition = coinBody->GetPosition();
@@ -559,7 +579,6 @@ void CarromGame::handlePocketedStriker() {
 
 
 
-
 int CarromGame::getCoinValue(b2Body* coinBody) {
     if (coinBody == queenBody) return 25;
     for (const auto& coin : blackCoins) {
@@ -569,7 +588,6 @@ int CarromGame::getCoinValue(b2Body* coinBody) {
     }
     return 10; 
 }
-
 
 void CarromGame::placeLastPocketedCoinInCenter(std::vector<b2Body*>& pocketedCoins) {
     if (pocketedCoins.empty()) return;
@@ -601,7 +619,6 @@ void CarromGame::placeLastPocketedCoinInCenter(std::vector<b2Body*>& pocketedCoi
         coinSprite->setPosition(500, 500);
     }
 }
-
 
 bool CarromGame::isSpaceAvailableInCenter() const {
     const float CENTER_X = 500.0f;
@@ -638,15 +655,19 @@ void CarromGame::moveCentralCoinToSide() {
 
 void CarromGame::updatePhysics() {
 
+
+
     const float timeStep = 1.0f / 300.0f;  // Smaller time step
     const int velocityIterations = 8;
     const int positionIterations = 3;
 
-        // Store current positions
+    // Store current positions
     previousPositions[0] = strikerBody->GetPosition();
-    previousPositions[1] = queenBody->GetPosition();
+    if (queenBody) {
+        previousPositions[1] = queenBody->GetPosition();
+    }
     for (size_t i = 0; i < coinBodies.size(); ++i) {
-    previousPositions[i + 2] = coinBodies[i]->GetPosition();
+        previousPositions[i + 2] = coinBodies[i]->GetPosition();
     }
 
     for (int i = 0; i < 5; ++i) {  // Perform multiple steps per frame
@@ -654,30 +675,36 @@ void CarromGame::updatePhysics() {
     }
 
     // Update striker position
-    b2Vec2 position = strikerBody->GetPosition();
-    strikerSprite.setPosition(position.x * 30.0f, position.y * 30.0f);
-
+    if (strikerBody) {
+        b2Vec2 position = strikerBody->GetPosition();
+        strikerSprite.setPosition(position.x * 30.0f, position.y * 30.0f);
+    }
     // Update queen position
-    b2Vec2 queenPos = queenBody->GetPosition();
-    queenSprite.setPosition(queenPos.x * 30.0f, queenPos.y * 30.0f);
+    if (queenBody) {
+        b2Vec2 queenPos = queenBody->GetPosition();
+        queenSprite.setPosition(queenPos.x * 30.0f, queenPos.y * 30.0f);
+    }
 
     // Update coin positions
     auto coinBody = coinBodies.begin();
     for (auto& coin : blackCoins) {
-        b2Vec2 pos = (*coinBody)->GetPosition();
-
-     coin.setPosition(pos.x * 30.0f, pos.y * 30.0f);
-        ++coinBody;
+        if (coinBody != coinBodies.end()) {
+            b2Vec2 pos = (*coinBody)->GetPosition();
+            coin.setPosition(pos.x * 30.0f, pos.y * 30.0f);
+            ++coinBody;
+        }
     }
     for (auto& coin : whiteCoins) {
-        b2Vec2 pos = (*coinBody)->GetPosition();
-        coin.setPosition(pos.x * 30.0f, pos.y * 30.0f);
-        ++coinBody;
+        if (coinBody != coinBodies.end()) {
+            b2Vec2 pos = (*coinBody)->GetPosition();
+            coin.setPosition(pos.x * 30.0f, pos.y * 30.0f);
+            ++coinBody;
+        }
     }
 
     if (frameCounter > 0) {
-    strikerBody->ApplyLinearImpulseToCenter(remainingForce, true);
-    frameCounter--;
+        strikerBody->ApplyLinearImpulseToCenter(remainingForce, true);
+        frameCounter--;
     }
 
     checkAllBodiesAtRest();
@@ -690,8 +717,8 @@ void CarromGame::applyStrikerForce(float angle, float power) {
     float forceY = std::sin(angle) * power * 20.0f;
     strikerBody->ApplyLinearImpulseToCenter(b2Vec2(-forceY,forceX), true);
 
-    // Store the remaining force to apply over next few frames
-    remainingForce = b2Vec2(-forceY*2.5f, forceX*2.5f) ;  // Apply 3 more times
+    // Storing the remaining force to apply over next few frames
+    remainingForce = b2Vec2(-forceY*2.5f, forceX*2.5f) ; 
     frameCounter = 2;
 
 }
@@ -741,46 +768,59 @@ void CarromGame::handleCollisions() {
 }
 
 
-void CarromGame::interpolatePositions(float alpha) {
-    b2Vec2 position = strikerBody->GetPosition();
-    b2Vec2 previousPosition = previousPositions[0];
-    sf::Vector2f interpolatedPosition(
-        (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
-        (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
-    );
-    strikerSprite.setPosition(interpolatedPosition);
 
-    position = queenBody->GetPosition();
-    previousPosition = previousPositions[1];
-    interpolatedPosition = sf::Vector2f(
-        (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
-        (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
-    );
-    queenSprite.setPosition(interpolatedPosition);
+void CarromGame::interpolatePositions(float alpha) {
+    b2Vec2 position;
+    b2Vec2 previousPosition;
+    sf::Vector2f interpolatedPosition;
+
+    if (strikerBody) {
+        position = strikerBody->GetPosition();
+        previousPosition = previousPositions[0];
+        interpolatedPosition = sf::Vector2f(
+            (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
+            (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
+        );
+        strikerSprite.setPosition(interpolatedPosition);
+    }
+
+    if (queenBody) {
+        position = queenBody->GetPosition();
+        previousPosition = previousPositions[1];
+        interpolatedPosition = sf::Vector2f(
+            (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
+            (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
+        );
+        queenSprite.setPosition(interpolatedPosition);
+    }
 
     auto coinBody = coinBodies.begin();
     size_t index = 2;
     for (auto& coin : blackCoins) {
-        position = (*coinBody)->GetPosition();
-        previousPosition = previousPositions[index];
-        interpolatedPosition = sf::Vector2f(
-            (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
-            (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
-        );
-        coin.setPosition(interpolatedPosition);
-        ++coinBody;
-        ++index;
+        if (coinBody != coinBodies.end()) {
+            position = (*coinBody)->GetPosition();
+            previousPosition = previousPositions[index];
+            interpolatedPosition = sf::Vector2f(
+                (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
+                (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
+            );
+            coin.setPosition(interpolatedPosition);
+            ++coinBody;
+            ++index;
+        }
     }
     for (auto& coin : whiteCoins) {
-        position = (*coinBody)->GetPosition();
-        previousPosition = previousPositions[index];
-        interpolatedPosition = sf::Vector2f(
-            (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
-            (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
-        );
-        coin.setPosition(interpolatedPosition);
-        ++coinBody;
-        ++index;
+        if (coinBody != coinBodies.end()) {
+            position = (*coinBody)->GetPosition();
+            previousPosition = previousPositions[index];
+            interpolatedPosition = sf::Vector2f(
+                (position.x * alpha + previousPosition.x * (1 - alpha)) * 30.0f,
+                (position.y * alpha + previousPosition.y * (1 - alpha)) * 30.0f
+            );
+            coin.setPosition(interpolatedPosition);
+            ++coinBody;
+            ++index;
+        }
     }
 }
 
@@ -795,6 +835,7 @@ void CarromGame::run() {
         accumulator += frameTime;
 
         eventHandler.handleEvents(window);
+        updateStrikerPositionFromEventHandler(); 
 
         if(!gameOver){
 
@@ -830,7 +871,7 @@ void CarromGame::run() {
                     (window.getSize().x - winnerSprite.getGlobalBounds().width) / 2,
                     (window.getSize().y - winnerSprite.getGlobalBounds().height) / 2
                 );
-                // window.draw(winnerSprite);
+                
             }
 
             }
@@ -865,6 +906,7 @@ void CarromGame::run() {
         window.draw(player1ScoreText);
         window.draw(player2ScoreText);
         window.draw(winnerSprite);
+        
         window.display();
         
 

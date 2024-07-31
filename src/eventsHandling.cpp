@@ -37,6 +37,7 @@ void EventHandler::updateAimingLine() {
 
 
 
+
 void EventHandler::handleEvents(sf::RenderWindow& window) {
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -99,14 +100,14 @@ void EventHandler::MousePressed(sf::Event::MouseButtonEvent& event) {
 }
 
 
-
-
 void EventHandler::MouseReleased(sf::Event::MouseButtonEvent& event) {
     if (event.button == sf::Mouse::Left) {
         if (strikerLocked && dragStarted) {
             strikerReleased = true;
             strikerAngle = dragAngle;
             strikerPower = currentDragDistance / maxDragDistance;
+        } else if (!strikerLocked && strikerDragging) {
+            newStrikerPosition = strikerSprite.getPosition();
         }
         strikerDragging = false;
         dragStarted = false;
@@ -116,6 +117,10 @@ void EventHandler::MouseReleased(sf::Event::MouseButtonEvent& event) {
     }
 }
 
+
+
+
+
 void EventHandler::MouseMoved(sf::Event::MouseMoveEvent& event) {
     if (strikerLocked && dragStarted) {
         sf::Vector2f currentPos(event.x, event.y);
@@ -123,7 +128,7 @@ void EventHandler::MouseMoved(sf::Event::MouseMoveEvent& event) {
         float dragDistance = std::sqrt(dragVector.x * dragVector.x + dragVector.y * dragVector.y);
         if (dragDistance > 0) {
             currentDragDistance = std::min(dragDistance, maxDragDistance);
-            dragAngle = std::atan2(dragVector.x,-dragVector.y);
+            dragAngle = std::atan2(dragVector.x, -dragVector.y);
             updatePowerIndicator();
             updateAimingLine();  
         } else {
@@ -133,17 +138,21 @@ void EventHandler::MouseMoved(sf::Event::MouseMoveEvent& event) {
             updateAimingLine();
         }
     }
-    
-    else if (strikerDragging && !strikerLocked) {
+  else if (!strikerLocked && strikerDragging) {
         sf::Vector2f currentPos(event.x, event.y);
         sf::Vector2f diff = currentPos - dragStart;
         
         float newX = std::clamp(strikerSprite.getPosition().x + diff.x, 
                                 MIN_X, MAX_X);
         float newY = (game.getCurrentPlayer() == 1) ? STRIKER_Y_PLAYER1 : STRIKER_Y_PLAYER2;
+        
         strikerSprite.setPosition(newX, newY);
         
-        dragStart = sf::Vector2f(event.x, event.y);
+        // Update the Box2D body position
+        b2Vec2 newPosition(newX / 30.0f, newY / 30.0f);
+        game.updateStrikerPosition(newPosition);
+        
+        dragStart = currentPos;
     }
 }
 

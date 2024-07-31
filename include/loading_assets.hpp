@@ -57,10 +57,6 @@ private:
     sf::Texture player2WinsTexture;
     bool gameOver;
 
-
-
-
-
     const float COIN_DIAMETER = 35.0f;
     const float STRIKER_DIAMETER = 46.0f;
     const float QUEEN_DIAMETER = 35.0f;
@@ -112,7 +108,7 @@ private:
         // New members for pocket system
     std::queue<b2Body*> pocketedCoins;
     bool strikerPocketed;
-    sf::Vector2f initialStrikerPosition;      //YO PAXI UNCOMMENT GARNA PARNA SAKNE NI HUNA SAKXA HAII....
+    sf::Vector2f initialStrikerPosition;      //YO PAXI UN/COMMENT GARNA PARNA SAKNE NI HUNA SAKXA HAII....
 
 public:
     CarromGame();
@@ -125,6 +121,11 @@ public:
     void setupBackgroundSprite();
     bool isGameOver() const;
     void handleQuitButtonClick();
+    void updateStrikerPosition(const b2Vec2& newPosition);
+
+    void updateStrikerPositionFromEventHandler();
+
+
     void handleQueenPocketed();
     sf::Vector2f getCurrentStrikerPosition() const;
     int getCurrentPlayer() const { return currentPlayer; } 

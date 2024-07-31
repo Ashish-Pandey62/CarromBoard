@@ -18,7 +18,9 @@ public:
     float getStrikerPower() const { return strikerPower; }
     void resetStrikerRelease() { strikerReleased = false; }
     const sf::VertexArray& getAimingLine() const { return aimingLine; }
-
+    // bool MouseMoved(sf::Event::MouseMoveEvent& event);
+    const sf::Vector2f& getNewStrikerPosition() const { return newStrikerPosition; }
+    void resetNewStrikerPosition() { newStrikerPosition = sf::Vector2f(-1, -1); }
 
 private:
     CarromGame& game;
@@ -26,14 +28,17 @@ private:
     bool strikerDragging;
     bool strikerLocked;
     sf::Vector2f dragStart;
-    const float MIN_X = 238.0f;
-    const float MAX_X = 768.0f;
+    const float MIN_X = 250.0f;
+    const float MAX_X = 850.0f;
     const float STRIKER_Y_PLAYER1 = 784.0f;
-    const float STRIKER_Y_PLAYER2 = 200.0f;
+    const float STRIKER_Y_PLAYER2 = 222.0f;
 
     void MousePressed(sf::Event::MouseButtonEvent& event);
     void MouseReleased(sf::Event::MouseButtonEvent& event);
     void MouseMoved(sf::Event::MouseMoveEvent& event);
+
+    sf::Vector2f newStrikerPosition;
+
 
     float maxDragDistance;
     float currentDragDistance;
