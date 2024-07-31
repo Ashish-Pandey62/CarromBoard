@@ -3,15 +3,16 @@
 #include <algorithm>
 #include <ctime>
 #include <cmath>
-
+#include<iostream>
+using namespace std;
 CarromGame::CarromGame() 
     : window(sf::VideoMode(1000, 1000), "Carrom Game"),
       eventHandler(*this, strikerSprite),
-      frictionCoefficient(2.5f),
+      frictionCoefficient(5.0f),
       restitutionCoefficient(0.2f),
       strikerPocketed(false),
-      player1StrikerPosition(500, 784),
-      player2StrikerPosition(500, 200),
+      player1StrikerPosition(500, 782),
+      player2StrikerPosition(500, 222),
       currentPlayer(1),
       strikerShot(false),
       coinPocketed(false),
@@ -19,11 +20,14 @@ CarromGame::CarromGame()
       player2Score(0),
       queenPocketed(false), 
       queenPocketedBy(0), 
-      coinPocketedAfterQueen(false)
+      coinPocketedAfterQueen(false),
+      gameOver(false)
+      
 {
     std::srand(std::time(nullptr));
     loadTextures();
     setupSprites();
+    setupBackgroundSprite();
     setupPhysics();
     setupPockets();
     resetStrikerPosition();
@@ -35,13 +39,13 @@ CarromGame::CarromGame()
 
     player1ScoreText.setFont(scoreFont);
     player1ScoreText.setCharacterSize(60);
-    player1ScoreText.setFillColor(sf::Color::Green);
-    player1ScoreText.setPosition(165, 33);
+    player1ScoreText.setFillColor(sf::Color::Red);
+    player1ScoreText.setPosition(300, 5);
 
     player2ScoreText.setFont(scoreFont);
     player2ScoreText.setCharacterSize(60);
-    player2ScoreText.setFillColor(sf::Color::Green);
-    player2ScoreText.setPosition(800, 33);
+    player2ScoreText.setFillColor(sf::Color::Red);
+    player2ScoreText.setPosition(855, 5);
 
     updateScoreDisplay();
 }
@@ -50,22 +54,57 @@ CarromGame::~CarromGame() {
     delete world;
 }
 
-const sf::Vector2f CarromGame::PLAYER1_POSITION(120.0f, -30.0f);
-const sf::Vector2f CarromGame::PLAYER2_POSITION(755.0f, -30.0f);
-const sf::Vector2f CarromGame::QUIT_POSITION(450.0f, 870.0f);
+const sf::Vector2f CarromGame::PLAYER1_POSITION(200.0f, 100.0f);
+const sf::Vector2f CarromGame::PLAYER2_POSITION(755.0f, 100.0f);
+const sf::Vector2f CarromGame::QUIT_POSITION(475.0f, 1000.0f);
 
 void CarromGame::loadTextures() {
-if (!boardTexture.loadFromFile("assets/board.png") ||
-    !strikerTexture.loadFromFile("assets/striker.png") ||
-    !queenTexture.loadFromFile("assets/queen.png") ||
-    !blackCoinTexture.loadFromFile("assets/black.png") ||
-    !whiteCoinTexture.loadFromFile("assets/white.png") ||
-    !player1Texture.loadFromFile("assets/player1.png") ||
-    !player2Texture.loadFromFile("assets/player2.png") ||
-    !quitTexture.loadFromFile("assets/quit.png")) {
-    throw std::runtime_error("Failed to load textures");
+    if (!boardTexture.loadFromFile("assets/board01.png") ||
+        !strikerTexture.loadFromFile("assets/striker1.png") ||
+        !queenTexture.loadFromFile("assets/queen.png") ||
+        !blackCoinTexture.loadFromFile("assets/black.png") ||
+        !whiteCoinTexture.loadFromFile("assets/white.png") ||
+        !player1Texture.loadFromFile("assets/kheladi11.png") ||
+        !player2Texture.loadFromFile("assets/kheladi22.png") ||
+        !quitTexture.loadFromFile("assets/quit11.png") ||
+        !backgroundTexture.loadFromFile("assets/bg3.png") ||
+        !player1WinsTexture.loadFromFile("assets/WINNER1.png") ||
+        !player2WinsTexture.loadFromFile("assets/WINNER2.png")) {
+        throw std::runtime_error("Failed to load textures");
+    }
 }
+
+
+void CarromGame::setupBackgroundSprite() {
+    backgroundSprite.setTexture(backgroundTexture);
+    backgroundSprite.setScale(
+        window.getSize().x / static_cast<float>(backgroundTexture.getSize().x),
+        window.getSize().y / static_cast<float>(backgroundTexture.getSize().y)
+    );
 }
+
+bool CarromGame::isGameOver() const {
+    return blackCoins.empty() && whiteCoins.empty() && !queenBody;
+}
+
+
+void CarromGame::handleQuitButtonClick() {
+    cout << "aayo yeta tiraaaaa"<< endl;
+    gameOver = true;
+    if (currentPlayer == 1) {
+        cout << "player 1 raixa"<<endl;
+        winnerSprite.setTexture(player2WinsTexture);
+    } else {
+        cout << "player 2 raxa"<<endl;
+        winnerSprite.setTexture(player1WinsTexture);
+    }
+    winnerSprite.setPosition(
+        (window.getSize().x - winnerSprite.getGlobalBounds().width) / 2,
+        (window.getSize().y - winnerSprite.getGlobalBounds().height) / 2
+    );
+}
+
+
 
 void CarromGame::setupSprites() {
 
@@ -183,7 +222,7 @@ void CarromGame::checkAllBodiesAtRest() {
 
 
 bool CarromGame::areAllBodiesAtRest() const {
-    const float restThreshold = 0.1f;  // Adjust this value as needed
+    const float restThreshold = 2.0f; 
 
     if (strikerBody->GetLinearVelocity().LengthSquared() > restThreshold) {
         return false;
@@ -283,7 +322,7 @@ void CarromGame::returnQueen() {
 
 void CarromGame::setupPockets() {
     std::vector<sf::Vector2f> pocketPositions = {
-        {153, 160}, {845, 158}, {153, 850}, {850, 850}
+        {154, 160}, {841, 158}, {153, 846}, {843, 845}
     };
 
     for (const auto& pos : pocketPositions) {
@@ -663,7 +702,7 @@ void CarromGame::handleCollisions() {
         b2Vec2 position = coinBody->GetPosition();
         b2Vec2 velocity = coinBody->GetLinearVelocity();
 
-        // Board dimensions (adjust these values according to your board size)
+        
         float boardLeft = 50.0f / 30.0f;
         float boardRight = 950.0f / 30.0f;
         float boardTop = 50.0f / 30.0f;
@@ -687,7 +726,7 @@ void CarromGame::handleCollisions() {
                 if (body->GetType() == b2_dynamicBody) {
             b2Vec2 velocity = body->GetLinearVelocity();
             float speed = velocity.Length();
-            if (speed > 0.1f) {  // Only apply friction if speed is above a threshold
+            if (speed > 0.1f) {  // Only applying friction if speed is above a threshold
                 float frictionForce = frictionCoefficient * body->GetMass() * 9.81f;
                 b2Vec2 frictionVector = -velocity;
                 frictionVector.Normalize();
@@ -757,6 +796,8 @@ void CarromGame::run() {
 
         eventHandler.handleEvents(window);
 
+        if(!gameOver){
+
         if (eventHandler.isStrikerReleased()) {
             float angle = eventHandler.getStrikerAngle();
             float power = eventHandler.getStrikerPower();
@@ -775,7 +816,30 @@ void CarromGame::run() {
         float alpha = accumulator / fixedTimeStep;
         interpolatePositions(alpha);
 
+        
+
+
+            if (gameOver) {
+                gameOver = true;
+                if (player1Score > player2Score) {
+                    winnerSprite.setTexture(player1WinsTexture);
+                } else if (player2Score > player1Score) {
+                    winnerSprite.setTexture(player2WinsTexture);
+                }
+                winnerSprite.setPosition(
+                    (window.getSize().x - winnerSprite.getGlobalBounds().width) / 2,
+                    (window.getSize().y - winnerSprite.getGlobalBounds().height) / 2
+                );
+                // window.draw(winnerSprite);
+            }
+
+            }
+
         window.clear(sf::Color::White);
+        
+        window.draw(backgroundSprite);
+        
+
         
         window.draw(boardSprite);
         for (const auto& pocket : pockets) {
@@ -800,6 +864,11 @@ void CarromGame::run() {
         }
         window.draw(player1ScoreText);
         window.draw(player2ScoreText);
+        window.draw(winnerSprite);
         window.display();
+        
+
+
+
     }
 }

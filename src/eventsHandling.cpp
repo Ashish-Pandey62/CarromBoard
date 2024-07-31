@@ -2,6 +2,8 @@
 #include "loading_assets.hpp" 
 #include <algorithm>
 #include <math.h>
+#include <iostream>
+using namespace std;
 
 EventHandler::EventHandler(CarromGame& game, sf::Sprite& striker)
     : game(game), strikerSprite(striker), strikerDragging(false), strikerLocked(false),
@@ -43,6 +45,16 @@ void EventHandler::handleEvents(sf::RenderWindow& window) {
                 window.close();
                 break;
             case sf::Event::MouseButtonPressed:
+
+                if (event.mouseButton.button == sf::Mouse::Left) {
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    if (mousePos.x >= 450 && mousePos.x <= 550 &&
+                        mousePos.y >= 870 && mousePos.y <= 970) {
+                        cout << "Left button dabyo kto le "<<endl;
+                        game.handleQuitButtonClick();
+                    }
+                }
+
                 MousePressed(event.mouseButton);
                 break;
             case sf::Event::MouseButtonReleased:

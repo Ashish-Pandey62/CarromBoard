@@ -32,8 +32,8 @@ private:
     sf::Texture player2Texture;
     sf::Texture quitTexture;
 
-    static const constexpr float PLAYER_SPRITE_WIDTH = 200.0f;
-    static const constexpr float PLAYER_SPRITE_HEIGHT = 200.0f;
+    static const constexpr float PLAYER_SPRITE_WIDTH = 120.0f;
+    static const constexpr float PLAYER_SPRITE_HEIGHT = 70.0f;
     static const sf::Vector2f PLAYER1_POSITION;
     static const sf::Vector2f PLAYER2_POSITION;
     static const sf::Vector2f QUIT_POSITION;
@@ -50,7 +50,12 @@ private:
     int queenPocketedBy;
     bool coinPocketedAfterQueen;
  
-  
+    sf::Sprite backgroundSprite;
+    sf::Texture backgroundTexture;
+    sf::Sprite winnerSprite;
+    sf::Texture player1WinsTexture;
+    sf::Texture player2WinsTexture;
+    bool gameOver;
 
 
 
@@ -117,6 +122,9 @@ public:
     void resetStrikerPosition();
     void handleTurn();
     void returnQueen();
+    void setupBackgroundSprite();
+    bool isGameOver() const;
+    void handleQuitButtonClick();
     void handleQueenPocketed();
     sf::Vector2f getCurrentStrikerPosition() const;
     int getCurrentPlayer() const { return currentPlayer; } 
