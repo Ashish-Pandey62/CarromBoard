@@ -46,6 +46,16 @@ private:
     sf::Text player1ScoreText;
     sf::Text player2ScoreText;
 
+    bool queenPocketed;
+    int queenPocketedBy;
+    bool coinPocketedAfterQueen;
+ 
+  
+
+
+
+
+
     const float COIN_DIAMETER = 35.0f;
     const float STRIKER_DIAMETER = 46.0f;
     const float QUEEN_DIAMETER = 35.0f;
@@ -106,6 +116,8 @@ public:
     void checkPocketCollisions();
     void resetStrikerPosition();
     void handleTurn();
+    void returnQueen();
+    void handleQueenPocketed();
     sf::Vector2f getCurrentStrikerPosition() const;
     int getCurrentPlayer() const { return currentPlayer; } 
     void run();

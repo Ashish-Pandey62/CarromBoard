@@ -16,7 +16,10 @@ CarromGame::CarromGame()
       strikerShot(false),
       coinPocketed(false),
       player1Score(0),
-      player2Score(0)
+      player2Score(0),
+      queenPocketed(false), 
+      queenPocketedBy(0), 
+      coinPocketedAfterQueen(false)
 {
     std::srand(std::time(nullptr));
     loadTextures();
@@ -221,19 +224,61 @@ sf::Vector2f CarromGame::getCurrentStrikerPosition() const {
     return (currentPlayer == 1) ? player1StrikerPosition : player2StrikerPosition;
 }
 
+
+
 void CarromGame::handleTurn() {
     if (strikerShot && areAllBodiesAtRest()) {
+        if (queenPocketed && !coinPocketedAfterQueen) {
+            returnQueen();
+        }
+        
         if (!coinPocketed || strikerPocketed) {
             switchTurn();
         } else {
             resetStrikerPosition();
         }
+        
         strikerShot = false;
         coinPocketed = false;
         strikerPocketed = false;
+        
+        if (queenPocketed && coinPocketedAfterQueen) {
+            if (queenPocketedBy == 1) {
+                player1Score += 25;
+            } else {
+                player2Score += 25;
+            }
+            queenPocketed = false;
+            queenPocketedBy = 0;
+            coinPocketedAfterQueen = false;
+        }
     }
 }
 
+void CarromGame::returnQueen() {
+    if (!queenBody) {
+        b2BodyDef queenDef;
+        queenDef.type = b2_dynamicBody;
+        queenDef.position.Set(500 / 30.0f, 500 / 30.0f);
+        queenBody = world->CreateBody(&queenDef);
+
+        b2CircleShape queenShape;
+        queenShape.m_radius = QUEEN_DIAMETER / 2.0f / 30.0f;
+
+        b2FixtureDef queenFixtureDef;
+        queenFixtureDef.shape = &queenShape;
+        queenFixtureDef.density = 1.0f;
+        queenFixtureDef.friction = frictionCoefficient;
+        queenFixtureDef.restitution = restitutionCoefficient;
+
+        queenBody->CreateFixture(&queenFixtureDef);
+        queenBody->SetLinearDamping(0.3f);
+    }
+    
+    queenSprite.setPosition(500, 500);
+    queenPocketed = false;
+    queenPocketedBy = 0;
+}
 
 
 void CarromGame::setupPockets() {
@@ -375,6 +420,19 @@ void CarromGame::setupPhysics() {
     }
 }
 
+void CarromGame::handleQueenPocketed() {
+    queenPocketed = true;
+    queenPocketedBy = currentPlayer;
+    coinPocketedAfterQueen = false;
+    
+    // Remove queen from the board
+    world->DestroyBody(queenBody);
+    queenBody = nullptr;
+    queenSprite.setPosition(-100, -100);  // Move off-screen
+}
+
+
+
 
 void CarromGame::checkPocketCollisions() {
     for (auto it = coinBodies.begin(); it != coinBodies.end();) {
@@ -394,15 +452,25 @@ void CarromGame::checkPocketCollisions() {
         }
         
         if (pocketed) {
-            int points = getCoinValue(coinBody);
-            if (currentPlayer == 1) {
-                player1Score += points;
-                player1PocketedCoins.push_back(coinBody);
-                 coinPocketed = true; 
+            if (coinBody == queenBody) {
+                handleQueenPocketed();
             } else {
-                player2Score += points;
-                player2PocketedCoins.push_back(coinBody);
-                coinPocketed = true; 
+                int points = getCoinValue(coinBody);
+                if (currentPlayer == 1) {
+                    player1Score += points;
+                    player1PocketedCoins.push_back(coinBody);
+                    coinPocketed = true;
+                    if (queenPocketed && queenPocketedBy == 1) {
+                        coinPocketedAfterQueen = true;
+                    }
+                } else {
+                    player2Score += points;
+                    player2PocketedCoins.push_back(coinBody);
+                    coinPocketed = true;
+                    if (queenPocketed && queenPocketedBy == 2) {
+                        coinPocketedAfterQueen = true;
+                    }
+                }
             }
             
             world->DestroyBody(coinBody);
@@ -429,24 +497,27 @@ void CarromGame::checkPocketCollisions() {
 }
 
 void CarromGame::handlePocketedStriker() {
+    strikerPocketed = true;
     if (currentPlayer == 1) {
-        player1Score -= 5;
+        player1Score = std::max(0, player1Score - 5);
         if (!player1PocketedCoins.empty()) {
             placeLastPocketedCoinInCenter(player1PocketedCoins);
-            player1Score -= getCoinValue(player1PocketedCoins.back());
+            player1Score = std::max(0, player1Score - getCoinValue(player1PocketedCoins.back()));
             player1PocketedCoins.pop_back();
         }
     } else {
-        player2Score -= 5;
+        player2Score = std::max(0, player2Score - 5);
         if (!player2PocketedCoins.empty()) {
             placeLastPocketedCoinInCenter(player2PocketedCoins);
-            player2Score -= getCoinValue(player2PocketedCoins.back());
+            player2Score = std::max(0, player2Score - getCoinValue(player2PocketedCoins.back()));
             player2PocketedCoins.pop_back();
         }
     }
     resetStrikerPosition();
     updateScoreDisplay();
 }
+
+
 
 
 
