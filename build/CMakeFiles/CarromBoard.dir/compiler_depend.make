@@ -317,7 +317,10 @@ CMakeFiles/CarromBoard.dir/src/eventsHandling.cpp.obj: C:/CarromBoard/CarromBoar
   C:/mingw32/include/c++/13.1.0/deque \
   C:/mingw32/include/c++/13.1.0/bits/stl_deque.h \
   C:/mingw32/include/c++/13.1.0/bits/deque.tcc \
-  C:/mingw32/include/c++/13.1.0/bits/stl_queue.h
+  C:/mingw32/include/c++/13.1.0/bits/stl_queue.h \
+  C:/mingw32/include/c++/13.1.0/iostream \
+  C:/mingw32/include/c++/13.1.0/istream \
+  C:/mingw32/include/c++/13.1.0/bits/istream.tcc
 
 CMakeFiles/CarromBoard.dir/src/loading_assets.cpp.obj: C:/CarromBoard/CarromBoard/src/loading_assets.cpp \
   C:/CarromBoard/CarromBoard/include/loading_assets.hpp \
@@ -635,7 +638,10 @@ CMakeFiles/CarromBoard.dir/src/loading_assets.cpp.obj: C:/CarromBoard/CarromBoar
   C:/mingw32/include/c++/13.1.0/deque \
   C:/mingw32/include/c++/13.1.0/bits/stl_deque.h \
   C:/mingw32/include/c++/13.1.0/bits/deque.tcc \
-  C:/mingw32/include/c++/13.1.0/bits/stl_queue.h
+  C:/mingw32/include/c++/13.1.0/bits/stl_queue.h \
+  C:/mingw32/include/c++/13.1.0/iostream \
+  C:/mingw32/include/c++/13.1.0/istream \
+  C:/mingw32/include/c++/13.1.0/bits/istream.tcc
 
 CMakeFiles/CarromBoard.dir/src/main.cpp.obj: C:/CarromBoard/CarromBoard/src/main.cpp \
   C:/CarromBoard/CarromBoard/include/loading_assets.hpp \
@@ -959,13 +965,13 @@ CMakeFiles/CarromBoard.dir/src/main.cpp.obj: C:/CarromBoard/CarromBoard/src/main
   C:/mingw32/include/c++/13.1.0/bits/istream.tcc
 
 
+C:/CarromBoard/CarromBoard/src/loading_assets.cpp:
+
 C:/mingw32/include/c++/13.1.0/bits/istream.tcc:
 
 C:/mingw32/include/c++/13.1.0/istream:
 
 C:/mingw32/include/c++/13.1.0/iostream:
-
-C:/CarromBoard/CarromBoard/src/loading_assets.cpp:
 
 C:/mingw32/include/c++/13.1.0/bits/stl_queue.h:
 

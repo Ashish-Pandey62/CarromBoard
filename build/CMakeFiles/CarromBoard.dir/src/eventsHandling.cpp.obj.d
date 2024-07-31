@@ -312,4 +312,7 @@ CMakeFiles/CarromBoard.dir/src/eventsHandling.cpp.obj: \
  C:/mingw32/include/c++/13.1.0/queue C:/mingw32/include/c++/13.1.0/deque \
  C:/mingw32/include/c++/13.1.0/bits/stl_deque.h \
  C:/mingw32/include/c++/13.1.0/bits/deque.tcc \
- C:/mingw32/include/c++/13.1.0/bits/stl_queue.h
+ C:/mingw32/include/c++/13.1.0/bits/stl_queue.h \
+ C:/mingw32/include/c++/13.1.0/iostream \
+ C:/mingw32/include/c++/13.1.0/istream \
+ C:/mingw32/include/c++/13.1.0/bits/istream.tcc
