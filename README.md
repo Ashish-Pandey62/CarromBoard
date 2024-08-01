@@ -6,9 +6,9 @@
 
 ## Screenshots
 
-![App Screenshot](C:\CarromBoard\CarromBoard\Assets\SS\Screenshot 2024-08-01 015019.png)
-![App Screenshot](C:\CarromBoard\CarromBoard\Assets\SS\Screenshot 2024-08-01 015051.png)
-![App Screenshot](C:\CarromBoard\CarromBoard\Assets\SS\Screenshot 2024-08-01 015406.png)
+![App Screenshot](Assets/SS/Screenshot 2024-08-01 015019.png)
+![App Screenshot](Assets/SS/Screenshot 2024-08-01 015051.png)
+![App Screenshot](Assets/SS/Screenshot 2024-08-01 015406.png)
 
 
 ## Demo
