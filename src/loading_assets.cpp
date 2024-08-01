@@ -8,8 +8,8 @@ using namespace std;
 CarromGame::CarromGame() 
     : window(sf::VideoMode(1000, 1000), "Carrom Game"),
       eventHandler(*this, strikerSprite),
-      frictionCoefficient(5.0f),
-      restitutionCoefficient(0.2f),
+      frictionCoefficient(7.0f),
+      restitutionCoefficient(0.3f),
       strikerPocketed(false),
       player1StrikerPosition(500, 782),
       player2StrikerPosition(500, 222),
@@ -287,26 +287,26 @@ void CarromGame::handleTurn() {
             if (coinPocketedAfterQueen) {
                 // Player successfully pocketed a coin after the queen
                 if (queenPocketedBy == 1) {
-                    player1Score += 25; // Queen's score
-                    player1Score += 5;  // Assume 5 points for the additional coin
+                    player1Score += 25; 
+                    player1Score += 5; 
                 } else {
-                    player2Score += 25; // Queen's score
-                    player2Score += 5;  // Assume 5 points for the additional coin
+                    player2Score += 25; 
+                    player2Score += 5;  
                 }
                 queenPocketed = false;
                 queenPocketedBy = 0;
                 coinPocketedAfterQueen = false;
-                // Don't switch turn, player gets another chance
+               
                 resetStrikerPosition();
             } else {
-                // Player failed to pocket a coin after the queen
+               
                 returnQueen();
                 switchTurn();
             }
         } else if (!coinPocketed || strikerPocketed) {
             switchTurn();
         } else {
-            // Player pocketed a coin, they get another turn
+           
             resetStrikerPosition();
         }
         
@@ -460,6 +460,7 @@ void CarromGame::setupPhysics() {
     for (size_t i = 0; i < previousPositions.size(); ++i) {
         previousPositions[i] = b2Vec2(0, 0);
     }
+    
     // Adding pocket 
 
 
@@ -487,7 +488,7 @@ void CarromGame::handleQueenPocketed() {
         world->DestroyBody(queenBody);
         queenBody = nullptr;
     }
-    queenSprite.setPosition(-100, -100);  // Move off-screen
+    queenSprite.setPosition(-100, -100);  // Movingg off-screen
 
     resetStrikerPosition();
     strikerShot = false;
@@ -520,7 +521,7 @@ void CarromGame::checkPocketCollisions() {
         float distance = b2Distance(strikerPosition, pocketPosition);
         if (distance < (POCKET_DIAMETER / 2 + STRIKER_DIAMETER / 2) / 30.0f) {
             handlePocketedStriker();
-            return; // Exit the function as turn will switch
+            return; // Exiting thoe function as turn will switch
         }
     }
 
@@ -559,13 +560,13 @@ void CarromGame::checkPocketCollisions() {
             // Remove the coin from the game
             for (auto& coin : blackCoins) {
                 if (coin.getPosition() == sf::Vector2f(coinPosition.x * 30.0f, coinPosition.y * 30.0f)) {
-                    coin.setPosition(-100, -100); // Move off-screen
+                    coin.setPosition(-100, -100); 
                     break;
                 }
             }
             for (auto& coin : whiteCoins) {
                 if (coin.getPosition() == sf::Vector2f(coinPosition.x * 30.0f, coinPosition.y * 30.0f)) {
-                    coin.setPosition(-100, -100); // Move off-screen
+                    coin.setPosition(-100, -100); 
                     break;
                 }
             }
@@ -579,7 +580,7 @@ void CarromGame::checkPocketCollisions() {
 
     updateScoreDisplay();
 
-    // Check if the game is over
+    
     if (coinBodies.empty()) {
         gameOver = true;
         if (player1Score > player2Score) {
@@ -641,17 +642,16 @@ void CarromGame::handlePocketedStriker() {
 
     strikerBody->CreateFixture(&strikerFixtureDef);
 
-    // Update the striker sprite position
+    
     strikerSprite.setPosition(newPosition);
 
     // Reset striker-related flags
     strikerShot = false;
     eventHandler.resetStrikerRelease();
 
-    // Update the score display
+    
     updateScoreDisplay();
-
-    // Switch turn after handling the pocketed striker
+ 
     switchTurn();
 }
 
@@ -753,18 +753,18 @@ void CarromGame::updatePhysics() {
         world->Step(timeStep, velocityIterations, positionIterations);
     }
 
-    // Update striker position
+
     if (strikerBody) {
         b2Vec2 position = strikerBody->GetPosition();
         strikerSprite.setPosition(position.x * 30.0f, position.y * 30.0f);
     }
-    // Update queen position
+
     if (queenBody) {
         b2Vec2 queenPos = queenBody->GetPosition();
         queenSprite.setPosition(queenPos.x * 30.0f, queenPos.y * 30.0f);
     }
 
-    // Update coin positions
+    // Updating the coin positions
     auto coinBody = coinBodies.begin();
     for (auto& coin : blackCoins) {
         if (coinBody != coinBodies.end()) {

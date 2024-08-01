@@ -11,7 +11,7 @@ find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
 # Include directories
 include_directories(include libs/box2d/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)  # Uncomment if you have a separate 'include' directory for your project
+include_directories(${PROJECT_SOURCE_DIR}/include)  
 
 # Add executable
 add_executable(CarromBoard
