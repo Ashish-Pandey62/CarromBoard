@@ -258,6 +258,12 @@ void CarromGame::switchTurn() {
     resetStrikerPosition();
     strikerShot = false;
     coinPocketed = false;
+    
+    // Reset queen-related flags if the queen wasn't successfully pocketed
+    if (queenPocketed && !coinPocketedAfterQueen) {
+        queenPocketed = false;
+        queenPocketedBy = 0;
+    }
 }
 
 void CarromGame::resetStrikerPosition() {
@@ -274,36 +280,42 @@ sf::Vector2f CarromGame::getCurrentStrikerPosition() const {
 }
 
 
+
 void CarromGame::handleTurn() {
     if (strikerShot && areAllBodiesAtRest()) {
         if (queenPocketed) {
             if (coinPocketedAfterQueen) {
                 // Player successfully pocketed a coin after the queen
                 if (queenPocketedBy == 1) {
-                    player1Score += 25;
+                    player1Score += 25; // Queen's score
+                    player1Score += 5;  // Assume 5 points for the additional coin
                 } else {
-                    player2Score += 25;
+                    player2Score += 25; // Queen's score
+                    player2Score += 5;  // Assume 5 points for the additional coin
                 }
                 queenPocketed = false;
                 queenPocketedBy = 0;
+                coinPocketedAfterQueen = false;
+                // Don't switch turn, player gets another chance
+                resetStrikerPosition();
             } else {
                 // Player failed to pocket a coin after the queen
                 returnQueen();
+                switchTurn();
             }
-        }
-        
-        if (!coinPocketed || strikerPocketed) {
+        } else if (!coinPocketed || strikerPocketed) {
             switchTurn();
         } else {
+            // Player pocketed a coin, they get another turn
             resetStrikerPosition();
         }
         
         strikerShot = false;
         coinPocketed = false;
         strikerPocketed = false;
-        coinPocketedAfterQueen = false;
     }
 }
+
 
 void CarromGame::returnQueen() {
     if (!queenBody) {
@@ -323,6 +335,9 @@ void CarromGame::returnQueen() {
 
         queenBody->CreateFixture(&queenFixtureDef);
         queenBody->SetLinearDamping(0.3f);
+    } else {
+        queenBody->SetTransform(b2Vec2(500 / 30.0f, 500 / 30.0f), 0);
+        queenBody->SetLinearVelocity(b2Vec2(0, 0));
     }
     
     queenSprite.setPosition(500, 500);
@@ -472,12 +487,16 @@ void CarromGame::handleQueenPocketed() {
         world->DestroyBody(queenBody);
         queenBody = nullptr;
     }
-    queenSprite.setPosition(-100, -100);  // screen bata bahira
+    queenSprite.setPosition(-100, -100);  // Move off-screen
+
+    resetStrikerPosition();
+    strikerShot = false;
 }
 
 
-void CarromGame::checkPocketCollisions() {
 
+void CarromGame::checkPocketCollisions() {
+    // Check for queen pocketing
     if (queenBody) {
         b2Vec2 queenPosition = queenBody->GetPosition();
         for (const auto& pocket : pockets) {
@@ -492,8 +511,20 @@ void CarromGame::checkPocketCollisions() {
         }
     }
 
+    // Check for striker pocketing
+    b2Vec2 strikerPosition = strikerBody->GetPosition();
+    for (const auto& pocket : pockets) {
+        sf::Vector2f pocketCenter = pocket.getPosition() + sf::Vector2f(POCKET_DIAMETER / 2, POCKET_DIAMETER / 2);
+        b2Vec2 pocketPosition(pocketCenter.x / 30.0f, pocketCenter.y / 30.0f);
+        
+        float distance = b2Distance(strikerPosition, pocketPosition);
+        if (distance < (POCKET_DIAMETER / 2 + STRIKER_DIAMETER / 2) / 30.0f) {
+            handlePocketedStriker();
+            return; // Exit the function as turn will switch
+        }
+    }
 
-
+    // Check for coin pocketing
     for (auto it = coinBodies.begin(); it != coinBodies.end();) {
         b2Body* coinBody = *it;
         b2Vec2 coinPosition = coinBody->GetPosition();
@@ -511,24 +542,31 @@ void CarromGame::checkPocketCollisions() {
         }
         
         if (pocketed) {
-            if (coinBody == queenBody) {
-                handleQueenPocketed();
+            int points = getCoinValue(coinBody);
+            if (currentPlayer == 1) {
+                player1Score += points;
+                player1PocketedCoins.push_back(coinBody);
             } else {
-                int points = getCoinValue(coinBody);
-                if (currentPlayer == 1) {
-                    player1Score += points;
-                    player1PocketedCoins.push_back(coinBody);
-                    coinPocketed = true;
-                    if (queenPocketed && queenPocketedBy == 1) {
-                        coinPocketedAfterQueen = true;
-                    }
-                } else {
-                    player2Score += points;
-                    player2PocketedCoins.push_back(coinBody);
-                    coinPocketed = true;
-                    if (queenPocketed && queenPocketedBy == 2) {
-                        coinPocketedAfterQueen = true;
-                    }
+                player2Score += points;
+                player2PocketedCoins.push_back(coinBody);
+            }
+            coinPocketed = true;
+            
+            if (queenPocketed && queenPocketedBy == currentPlayer) {
+                coinPocketedAfterQueen = true;
+            }
+            
+            // Remove the coin from the game
+            for (auto& coin : blackCoins) {
+                if (coin.getPosition() == sf::Vector2f(coinPosition.x * 30.0f, coinPosition.y * 30.0f)) {
+                    coin.setPosition(-100, -100); // Move off-screen
+                    break;
+                }
+            }
+            for (auto& coin : whiteCoins) {
+                if (coin.getPosition() == sf::Vector2f(coinPosition.x * 30.0f, coinPosition.y * 30.0f)) {
+                    coin.setPosition(-100, -100); // Move off-screen
+                    break;
                 }
             }
             
@@ -539,24 +577,28 @@ void CarromGame::checkPocketCollisions() {
         }
     }
 
-    // Check if striker is pocketed
-    b2Vec2 strikerPosition = strikerBody->GetPosition();
-    for (const auto& pocket : pockets) {
-        sf::Vector2f pocketCenter = pocket.getPosition() + sf::Vector2f(POCKET_DIAMETER / 2, POCKET_DIAMETER / 2);
-        b2Vec2 pocketPosition(pocketCenter.x / 30.0f, pocketCenter.y / 30.0f);
-        
-        float distance = b2Distance(strikerPosition, pocketPosition);
-        if (distance < (POCKET_DIAMETER / 2 + STRIKER_DIAMETER / 2) / 30.0f) {
-            handlePocketedStriker();
-            break;
-        }
-    }
-
     updateScoreDisplay();
+
+    // Check if the game is over
+    if (coinBodies.empty()) {
+        gameOver = true;
+        if (player1Score > player2Score) {
+            winnerSprite.setTexture(player1WinsTexture);
+        } else if (player2Score > player1Score) {
+            winnerSprite.setTexture(player2WinsTexture);
+        }
+        winnerSprite.setPosition(
+            (window.getSize().x - winnerSprite.getGlobalBounds().width) / 2,
+            (window.getSize().y - winnerSprite.getGlobalBounds().height) / 2
+        );
+    }
 }
+
 
 void CarromGame::handlePocketedStriker() {
     strikerPocketed = true;
+
+    // Deduct points and handle coin return
     if (currentPlayer == 1) {
         player1Score = std::max(0, player1Score - 5);
         if (!player1PocketedCoins.empty()) {
@@ -572,8 +614,45 @@ void CarromGame::handlePocketedStriker() {
             player2PocketedCoins.pop_back();
         }
     }
-    resetStrikerPosition();
+
+    // Destroy the current striker body
+    if (strikerBody) {
+        world->DestroyBody(strikerBody);
+        strikerBody = nullptr;
+    }
+
+    // Get the new position for the striker
+    sf::Vector2f newPosition = getCurrentStrikerPosition();
+
+    // Recreate the striker body
+    b2BodyDef strikerDef;
+    strikerDef.type = b2_dynamicBody;
+    strikerDef.position.Set(newPosition.x / 30.0f, newPosition.y / 30.0f);
+    strikerBody = world->CreateBody(&strikerDef);
+
+    b2CircleShape strikerShape;
+    strikerShape.m_radius = STRIKER_DIAMETER / 2.0f / 30.0f;
+
+    b2FixtureDef strikerFixtureDef;
+    strikerFixtureDef.shape = &strikerShape;
+    strikerFixtureDef.density = 1.0f;
+    strikerFixtureDef.friction = frictionCoefficient;
+    strikerFixtureDef.restitution = restitutionCoefficient;
+
+    strikerBody->CreateFixture(&strikerFixtureDef);
+
+    // Update the striker sprite position
+    strikerSprite.setPosition(newPosition);
+
+    // Reset striker-related flags
+    strikerShot = false;
+    eventHandler.resetStrikerRelease();
+
+    // Update the score display
     updateScoreDisplay();
+
+    // Switch turn after handling the pocketed striker
+    switchTurn();
 }
 
 
