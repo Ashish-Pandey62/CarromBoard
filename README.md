@@ -14,7 +14,7 @@
 
 
 ## Demo
-[![Watch the video](https://github.com/Ashish-Pandey62/CarromBoard/blob/main/Assets/SS/fina_demo_carrom_board.mp4)
+[![Watch the video](https://github.com/Ashish-Pandey62/CarromBoard/blob/main/Assets/SS/fina_demo_carrom_board.mp4)]
 
 ## Build
 
