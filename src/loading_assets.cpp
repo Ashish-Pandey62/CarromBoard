@@ -106,6 +106,7 @@ void CarromGame::handleQuitButtonClick() {
 
 
 
+
 void CarromGame::setupSprites() {
 
     // Set up player1 sprite
@@ -190,6 +191,8 @@ void CarromGame::setupSprites() {
         float x = centerX + positions[i].first * coinSpacing;
         float y = centerY + positions[i].second * coinSpacing;
 
+
+
         coin.setOrigin(coin.getTexture()->getSize().x / 2.0f, coin.getTexture()->getSize().y / 2.0f);
         coin.setScale(
             COIN_DIAMETER / coin.getTexture()->getSize().x,
@@ -199,6 +202,9 @@ void CarromGame::setupSprites() {
 
         allCoins.push_back(coin);
     }
+
+
+
 
     // Separate coins into black and white vectors
     for (const auto& coin : allCoins) {
@@ -424,7 +430,7 @@ void CarromGame::setupPhysics() {
         coinBodies.push_back(coinBody);
     }
 
-    for (const auto& coin : whiteCoins) {
+    for (const auto& coin : whiteCoins) {   
         b2BodyDef coinDef;
         coinDef.type = b2_dynamicBody;
         coinDef.position.Set(coin.getPosition().x / 30.0f, coin.getPosition().y / 30.0f);
@@ -904,6 +910,8 @@ void CarromGame::interpolatePositions(float alpha) {
 }
 
 
+
+
 void CarromGame::run() {
     sf::Clock clock;
     float accumulator = 0.0f;
@@ -993,3 +1001,7 @@ void CarromGame::run() {
 
     }
 }
+
+
+
+
